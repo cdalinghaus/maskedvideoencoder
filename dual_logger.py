@@ -33,7 +33,7 @@ class DualLogger:
         wandb.finish()
 
 # Usage:
-writer = DualLogger(log_dir='./logs', project_name='my_project')
+#writer = DualLogger(log_dir='./logs', project_name='my_project')
 #writer.add_scalar('Training loss', 0.5, 1)
 #writer.add_image('Train: Mask', image_tensor, 1)  # image_tensor should be a PyTorch tensor.
 #writer.close()
