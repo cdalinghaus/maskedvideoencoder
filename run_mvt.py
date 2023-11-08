@@ -129,7 +129,6 @@ for _ in range(1000):
     
             # evaluation dataset
             X_eval, _ = random.choice(hela_val)
-            X_eval = X_eval / 255
             X_eval = X_eval[None].to(device)
             X_eval_pred, (X_eval_pred_masked, ) = model(X_eval)
 
