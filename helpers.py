@@ -10,7 +10,10 @@ def plotframes(X, title=None, show=True):
     fig, ax = plt.subplots(1, frames, figsize=(frames * 3, 3))
     
     for idx in range(frames):
-        ax.flat[idx].imshow(X[0, idx].permute(2,1,0).cpu().detach().numpy())
+        if frames > 1:
+            ax.flat[idx].imshow(X[0, idx].permute(2,1,0).cpu().detach().numpy())
+        else:
+            ax.imshow(X[0, idx].permute(2,1,0).cpu().detach().numpy())
     if title is not None:
         fig.suptitle(title)
     if show:
@@ -41,7 +44,7 @@ def plotframes_tensorboard(X, title=None):
 
     return tensor
 
-def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE):
+def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE, NUM_FRAMES):
     """
     Reconstruct the video tensor from its patches.
     
@@ -58,9 +61,9 @@ def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE):
     batch_size = patches.shape[0]
     
     # Reshape patches to prepare for 'folding'
-    patches_reshaped = patches.reshape(batch_size, 10, patches_per_dim, patches_per_dim, 3, PATCH_SIZE, PATCH_SIZE)
+    patches_reshaped = patches.reshape(batch_size, NUM_FRAMES, patches_per_dim, patches_per_dim, 3, PATCH_SIZE, PATCH_SIZE)
     
     # Fold the patches back into full frames
-    video_tensor = patches_reshaped.permute(0, 1, 4, 2, 5, 3, 6).reshape(batch_size, 10, 3, IMG_SIZE, IMG_SIZE)
+    video_tensor = patches_reshaped.permute(0, 1, 4, 2, 5, 3, 6).reshape(batch_size, NUM_FRAMES, 3, IMG_SIZE, IMG_SIZE)
     
     return video_tensor

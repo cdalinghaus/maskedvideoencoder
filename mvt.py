@@ -65,7 +65,7 @@ class MaskedVideoTransformer(nn.Module):
         patches_per_dim = self.IMG_SIZE // self.PATCH_SIZE
         batch_size = X.shape[0]
         patches = X.unfold(3, self.PATCH_SIZE, self.PATCH_SIZE).unfold(4, self.PATCH_SIZE, self.PATCH_SIZE)
-        patches = patches.permute(0, 1, 3, 4, 2, 5, 6).reshape(batch_size, 10 * patches_per_dim * patches_per_dim, 3, self.PATCH_SIZE, self.PATCH_SIZE)
+        patches = patches.permute(0, 1, 3, 4, 2, 5, 6).reshape(batch_size, self.NUM_FRAMES * patches_per_dim * patches_per_dim, self.COLOR_CHANNELS, self.PATCH_SIZE, self.PATCH_SIZE)
         patches_shape_unflattened = patches.shape
         patches_flattened = torch.flatten(patches, start_dim=2)
         patches_flattened = self.P(patches_flattened)
@@ -84,7 +84,7 @@ class MaskedVideoTransformer(nn.Module):
         X_for_encoder = X[:, patches_to_keep].clone()
         X_blinded_for_display = patches.clone()
         X_blinded_for_display[:, patches_to_keep_inverted] = 1
-        X_blinded_for_display = reconstruct_from_patches(X_blinded_for_display, self.IMG_SIZE, self.PATCH_SIZE)
+        X_blinded_for_display = reconstruct_from_patches(X_blinded_for_display, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES)
         X_for_decoder = X.clone()
         X_for_decoder[:, patches_to_keep_inverted] = 0
 
@@ -113,7 +113,7 @@ class MaskedVideoTransformer(nn.Module):
         decoder_representation = torch.sigmoid(decoder_representation)
         decoder_representation = decoder_representation.reshape(patches_shape_unflattened)
         
-        decoder_patches = reconstruct_from_patches(decoder_representation, self.IMG_SIZE, self.PATCH_SIZE)
+        decoder_patches = reconstruct_from_patches(decoder_representation, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES)
 
         return decoder_patches, (X_blinded_for_display, )
 
