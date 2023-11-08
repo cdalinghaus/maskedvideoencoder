@@ -102,7 +102,6 @@ step = 0
 for _ in range(1000):
     for i_step, (X, _) in enumerate(train_dataloader):
         print(i_step)
-        X = X / 255
         X = X.to(device)
         
         
