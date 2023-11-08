@@ -61,7 +61,7 @@ import matplotlib.pyplot as plt
 #i = iter(train_dataloader)
 
 from PIL import Image
-
+"""
 def resize_to_canvas(image, canvas_size=(256, 256)):
     # Get the aspect ratio of the image
     aspect_ratio = image.width / image.height
@@ -85,7 +85,7 @@ def resize_to_canvas(image, canvas_size=(256, 256)):
 
     canvas.paste(resized_image, (x_offset, y_offset))
     return canvas
-
+"""
 from helads import HelaData
 
 hela_train = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train", sequence_length=1)

@@ -28,7 +28,7 @@ class MaskedVideoTransformer(nn.Module):
         PATCH_SIZE = 16,
         D_DIM = 128,
         EMBEDDING_DIM = 32,
-        PATCH_KEEP_PERCENTAGE = 0.8
+        PATCH_KEEP_PERCENTAGE = 0.2
     ):
         super().__init__()
         NUM_PATCHES = int((IMG_SIZE / PATCH_SIZE) * (IMG_SIZE / PATCH_SIZE))*NUM_FRAMES
