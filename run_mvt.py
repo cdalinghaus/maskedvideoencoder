@@ -31,14 +31,14 @@ class DualLogger:
     
     def add_scalar(self, tag, scalar_value, global_step=None):
         # Logging to TensorBoard
-        self.tensorboard_writer.add_scalar(tag, scalar_value, global_step)
+        #self.tensorboard_writer.add_scalar(tag, scalar_value, global_step)
 
         # Logging to wandb
         wandb.log({tag: scalar_value}, step=global_step)
     
     def add_image(self, tag, img_tensor, global_step=None):
         # Logging to TensorBoard
-        self.tensorboard_writer.add_image(tag, img_tensor, global_step)
+        #self.tensorboard_writer.add_image(tag, img_tensor, global_step)
 
         # Logging to wandb. Note: wandb requires image data to be in PIL or numpy format.
         # Assuming img_tensor is a PyTorch tensor, we can convert it to a wandb-compatible format.
@@ -110,7 +110,7 @@ for _ in range(1000):
         loss = criterion(X_pred, X)
     
         loss.backward()
-        if step%200 == 1:
+        if step%20 == 1:
             optim.step()
             optim.zero_grad()
             print(step)
@@ -129,7 +129,6 @@ for _ in range(1000):
     
             # evaluation dataset
             X_eval, _ = random.choice(hela_val)
-            X_eval = X_eval / 255
             X_eval = X_eval[None].to(device)
             X_eval_pred, (X_eval_pred_masked, ) = model(X_eval)
 

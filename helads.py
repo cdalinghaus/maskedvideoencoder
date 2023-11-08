@@ -94,7 +94,13 @@ class HelaData:
         fixed_transformation = FixedTransform(min_angle=0, max_angle=359, crop_height=128, crop_width=128)
         #print(fixed_transformation)
         
-        tensors = [fixed_transformation(im) for im in images]
+        #tensors = [fixed_transformation(im) for im in images]
+        tensors = []
+        for file_path in files:
+            with Image.open(file_path) as img:  # This will ensure the file is closed after the block
+                tensor = fixed_transformation(img)
+                tensors.append(tensor)
+
         stacked = torch.stack(tensors)
         #result = stacked
         #result = result.moveaxis(3, 1)

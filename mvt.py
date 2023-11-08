@@ -28,7 +28,7 @@ class MaskedVideoTransformer(nn.Module):
         PATCH_SIZE = 16,
         D_DIM = 128,
         EMBEDDING_DIM = 32,
-        PATCH_KEEP_PERCENTAGE = 0.2
+        PATCH_KEEP_PERCENTAGE = 0.8
     ):
         super().__init__()
         NUM_PATCHES = int((IMG_SIZE / PATCH_SIZE) * (IMG_SIZE / PATCH_SIZE))*NUM_FRAMES
@@ -53,11 +53,11 @@ class MaskedVideoTransformer(nn.Module):
         self.Embedding = torch.nn.Embedding(NUM_PATCHES, EMBEDDING_DIM)
         self.Missing_Patch_Embedding = torch.nn.Embedding(1, D_DIM)
 
-        encoder_layer = torch.nn.TransformerEncoderLayer(D_DIM + EMBEDDING_DIM, 2, dim_feedforward=2048, dropout=0.1)
-        self.transformer_encoder = torch.nn.TransformerEncoder(encoder_layer, 6)
+        encoder_layer = torch.nn.TransformerEncoderLayer(D_DIM + EMBEDDING_DIM, 16, dim_feedforward=2048, dropout=0.1)
+        self.transformer_encoder = torch.nn.TransformerEncoder(encoder_layer, 12)
 
-        decoder_layer = torch.nn.TransformerEncoderLayer(D_DIM + EMBEDDING_DIM, 2, dim_feedforward=2048, dropout=0.1)
-        self.transformer_decoder = torch.nn.TransformerEncoder(decoder_layer, 6)
+        decoder_layer = torch.nn.TransformerEncoderLayer(D_DIM + EMBEDDING_DIM, 16, dim_feedforward=2048, dropout=0.1)
+        self.transformer_decoder = torch.nn.TransformerEncoder(decoder_layer, 12)
 
     def forward(self, X):
         
