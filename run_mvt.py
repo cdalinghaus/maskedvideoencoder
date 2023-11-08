@@ -7,19 +7,17 @@ from datetime import datetime
 import random
 
 device = "cuda"
+device = "cpu"
 
 from torch.utils.data import DataLoader
-train_ds = GameDS("/tmp/sequences", train=True)
-train_dataloader = DataLoader(train_ds, batch_size=24, shuffle=True, prefetch_factor=4, num_workers=4)
-val_ds = GameDS("/tmp/sequences", train=False)
-val_dataloader = DataLoader(val_ds, batch_size=24, shuffle=True, prefetch_factor=4, num_workers=4)
 
-model = MaskedVideoTransformer()
+model = MaskedVideoTransformer(NUM_FRAMES=1)
 model.to(device);
 
 import wandb
 from torch.utils.tensorboard import SummaryWriter
 
+print("run started")
 class DualLogger:
     def __init__(self, log_dir=None, project_name=None):
         """
@@ -60,7 +58,7 @@ writer = DualLogger(log_dir='./logs', project_name='my_project')
 
 import matplotlib.pyplot as plt
 
-i = iter(train_dataloader)
+#i = iter(train_dataloader)
 
 from PIL import Image
 
@@ -127,12 +125,20 @@ class HelaData:
     def __len__(self):
         return self.current_start_index
 
+hela_train = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train", sequence_length=1)
+hela_val = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test", sequence_length=1)
+train_dataloader = DataLoader(hela_train, batch_size=24, shuffle=True, prefetch_factor=4, num_workers=4)
+val_dataloader = DataLoader(hela_val, batch_size=24, shuffle=True, prefetch_factor=4, num_workers=4)
+
+print(len(train_dataloader))
+
 criterion = torch.nn.MSELoss()
 optim = torch.optim.Adam(params=model.parameters(), lr=0.01)
 
 step = 0
 for _ in range(1000):
     for i_step, (X, _) in enumerate(train_dataloader):
+        print(i_step)
         X = X / 255
         X = X.to(device)
         
@@ -142,10 +148,11 @@ for _ in range(1000):
         loss = criterion(X_pred, X)
     
         loss.backward()
-        if step%20 == 1:
+        if step%200 == 1:
             optim.step()
             optim.zero_grad()
-        
+            print(step)
+ 
         writer.add_scalar('Training loss', loss.item(), step)
     
         if step%100 == 1:
@@ -159,7 +166,7 @@ for _ in range(1000):
             writer.add_image('Train: Original', image_tensor, step)
     
             # evaluation dataset
-            X_eval, _ = random.choice(val_ds)
+            X_eval, _ = random.choice(hela_val)
             X_eval = X_eval / 255
             X_eval = X_eval[None].to(device)
             X_eval_pred, (X_eval_pred_masked, ) = model(X_eval)
@@ -178,8 +185,10 @@ for _ in range(1000):
 
             del X_eval_pred
             del X_eval_pred_masked
-        
+
+
         del X_pred
         del X_masked
         step += 1
     
+
