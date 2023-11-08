@@ -24,7 +24,7 @@ class MaskedVideoTransformer(nn.Module):
     def __init__(self,
         NUM_FRAMES = 10,
         COLOR_CHANNELS = 3,
-        IMG_SIZE = 256,
+        IMG_SIZE = 128,
         PATCH_SIZE = 16,
         D_DIM = 128,
         EMBEDDING_DIM = 32,
