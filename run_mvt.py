@@ -7,11 +7,10 @@ from datetime import datetime
 import random
 
 device = "cuda"
-device = "cpu"
 
 from torch.utils.data import DataLoader
 
-model = MaskedVideoTransformer(NUM_FRAMES=1)
+model = MaskedVideoTransformer(NUM_FRAMES=1, COLOR_CHANNELS=1)
 model.to(device);
 
 import wandb
@@ -90,15 +89,16 @@ from helads import HelaData
 
 hela_train = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train", sequence_length=1)
 hela_val = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test", sequence_length=1)
-train_dataloader = DataLoader(hela_train, batch_size=24, shuffle=True, prefetch_factor=4, num_workers=4)
-val_dataloader = DataLoader(hela_val, batch_size=24, shuffle=True, prefetch_factor=4, num_workers=4)
+train_dataloader = DataLoader(hela_train, batch_size=24, shuffle=True, prefetch_factor=2, num_workers=2)
+val_dataloader = DataLoader(hela_val, batch_size=24, shuffle=True, prefetch_factor=2, num_workers=2)
 
 print(len(train_dataloader))
 
 criterion = torch.nn.MSELoss()
-optim = torch.optim.Adam(params=model.parameters(), lr=0.01)
+optim = torch.optim.Adam(params=model.parameters(), lr=0.1)
 
 step = 0
+optim.zero_grad()
 for _ in range(1000):
     for i_step, (X, _) in enumerate(train_dataloader):
         print(i_step)
@@ -110,7 +110,7 @@ for _ in range(1000):
         loss = criterion(X_pred, X)
     
         loss.backward()
-        if step%20 == 1:
+        if step%200 == 199:
             optim.step()
             optim.zero_grad()
             print(step)

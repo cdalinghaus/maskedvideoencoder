@@ -104,7 +104,7 @@ class HelaData:
         stacked = torch.stack(tensors)
         #result = stacked
         #result = result.moveaxis(3, 1)
-        return stacked, torch.Tensor([0])
+        return stacked[:, 0], torch.Tensor([0])
         
     def __len__(self):
         return self.current_start_index
