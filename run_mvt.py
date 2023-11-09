@@ -7,6 +7,7 @@ from datetime import datetime
 import random
 
 device = "cuda"
+device = "cpu"
 
 from torch.utils.data import DataLoader
 

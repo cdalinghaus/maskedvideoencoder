@@ -84,7 +84,7 @@ class MaskedVideoTransformer(nn.Module):
         X_for_encoder = X[:, patches_to_keep].clone()
         X_blinded_for_display = patches.clone()
         X_blinded_for_display[:, patches_to_keep_inverted] = 1
-        X_blinded_for_display = reconstruct_from_patches(X_blinded_for_display, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES)
+        X_blinded_for_display = reconstruct_from_patches(X_blinded_for_display, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES, self.COLOR_CHANNELS)
         X_for_decoder = X.clone()
         X_for_decoder[:, patches_to_keep_inverted] = 0
 
@@ -113,7 +113,7 @@ class MaskedVideoTransformer(nn.Module):
         decoder_representation = torch.sigmoid(decoder_representation)
         decoder_representation = decoder_representation.reshape(patches_shape_unflattened)
         
-        decoder_patches = reconstruct_from_patches(decoder_representation, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES)
+        decoder_patches = reconstruct_from_patches(decoder_representation, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES, self.COLOR_CHANNELS)
 
         return decoder_patches, (X_blinded_for_display, )
 

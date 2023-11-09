@@ -44,7 +44,7 @@ def plotframes_tensorboard(X, title=None):
 
     return tensor
 
-def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE, NUM_FRAMES):
+def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE, NUM_FRAMES, COLOR_CHANNELS):
     """
     Reconstruct the video tensor from its patches.
     
@@ -61,9 +61,9 @@ def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE, NUM_FRAMES):
     batch_size = patches.shape[0]
     
     # Reshape patches to prepare for 'folding'
-    patches_reshaped = patches.reshape(batch_size, NUM_FRAMES, patches_per_dim, patches_per_dim, 3, PATCH_SIZE, PATCH_SIZE)
+    patches_reshaped = patches.reshape(batch_size, NUM_FRAMES, patches_per_dim, patches_per_dim, COLOR_CHANNELS, PATCH_SIZE, PATCH_SIZE)
     
     # Fold the patches back into full frames
-    video_tensor = patches_reshaped.permute(0, 1, 4, 2, 5, 3, 6).reshape(batch_size, NUM_FRAMES, 3, IMG_SIZE, IMG_SIZE)
+    video_tensor = patches_reshaped.permute(0, 1, 4, 2, 5, 3, 6).reshape(batch_size, NUM_FRAMES, COLOR_CHANNELS, IMG_SIZE, IMG_SIZE)
     
     return video_tensor
