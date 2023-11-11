@@ -10,14 +10,15 @@ class DualLogger:
         self.tensorboard_writer = SummaryWriter(log_dir=log_dir)
         
         if project_name:
-            wandb.init(project=project_name)
-    
+            #wandb.init(project=project_name)
+            pass
+ 
     def add_scalar(self, tag, scalar_value, global_step=None):
         # Logging to TensorBoard
         self.tensorboard_writer.add_scalar(tag, scalar_value, global_step)
 
         # Logging to wandb
-        wandb.log({tag: scalar_value}, step=global_step)
+        #wandb.log({tag: scalar_value}, step=global_step)
     
     def add_image(self, tag, img_tensor, global_step=None):
         # Logging to TensorBoard
@@ -26,11 +27,11 @@ class DualLogger:
         # Logging to wandb. Note: wandb requires image data to be in PIL or numpy format.
         # Assuming img_tensor is a PyTorch tensor, we can convert it to a wandb-compatible format.
         image = wandb.Image(img_tensor.permute(1, 2, 0).cpu().numpy())  # Assuming img_tensor is of shape (C, H, W)
-        wandb.log({tag: image}, step=global_step)
+        #wandb.log({tag: image}, step=global_step)
     
     def close(self):
         self.tensorboard_writer.close()
-        wandb.finish()
+        #wandb.finish()
 
 # Usage:
 #writer = DualLogger(log_dir='./logs', project_name='my_project')

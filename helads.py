@@ -89,7 +89,7 @@ class HelaData:
         local_index = idx - start_item
         files = self.sequences[start_index][local_index:local_index+self.sequence_length]
         
-        images = [Image.open(f) for f in files]
+        #images = [Image.open(f) for f in files]
         
         fixed_transformation = FixedTransform(min_angle=0, max_angle=359, crop_height=128, crop_width=128)
         #print(fixed_transformation)
