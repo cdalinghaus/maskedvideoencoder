@@ -7,9 +7,14 @@ from datetime import datetime
 import random
 import argparse
 from dual_logger import DualLogger
+import matplotlib.pyplot as plt
+import uuid
 
 parser = argparse.ArgumentParser(prog='RunMVT', description='Trains the MVT model')
 parser.add_argument('--device', type=str, default="cuda")
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--n_frames', type=int, default=1)
+
 
 args = parser.parse_args()
 
@@ -17,7 +22,7 @@ args = parser.parse_args()
 
 from torch.utils.data import DataLoader
 
-model = MaskedVideoTransformer(NUM_FRAMES=1, COLOR_CHANNELS=1)
+model = MaskedVideoTransformer(NUM_FRAMES=args.n_frames, COLOR_CHANNELS=1, D_DIM=736)
 model.to(args.device);
 
 import wandb
@@ -25,43 +30,10 @@ from torch.utils.tensorboard import SummaryWriter
 
 print("run started")
 
-# Usage:
-writer = DualLogger(log_dir='./logs', project_name='my_project')
-#writer.add_scalar('Training loss', 0.5, 1)
-#writer.add_image('Train: Mask', image_tensor, 1)  # image_tensor should be a PyTorch tensor.
-#writer.close()
+writer = DualLogger(log_dir=f'./logs/{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_{str(uuid.uuid4())}', project_name='my_project')
 
-
-import matplotlib.pyplot as plt
-
-#i = iter(train_dataloader)
 
 from PIL import Image
-"""
-def resize_to_canvas(image, canvas_size=(256, 256)):
-    # Get the aspect ratio of the image
-    aspect_ratio = image.width / image.height
-
-    if image.width > image.height:  # Landscape or square
-        new_width = canvas_size[0]
-        new_height = int(canvas_size[0] / aspect_ratio)
-    else:  # Portrait
-        new_height = canvas_size[1]
-        new_width = int(canvas_size[1] * aspect_ratio)
-
-    # Resize the image
-    resized_image = image.resize((new_width, new_height), Image.LANCZOS)
-
-    # Create a new blank canvas
-    canvas = Image.new("RGB", canvas_size, "white")
-
-    # Compute the position to paste the resized image onto the canvas
-    x_offset = (canvas_size[0] - new_width) // 2
-    y_offset = (canvas_size[1] - new_height) // 2
-
-    canvas.paste(resized_image, (x_offset, y_offset))
-    return canvas
-"""
 from helads import HelaData
 
 hela_train = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train", sequence_length=1)
@@ -72,7 +44,7 @@ val_dataloader = DataLoader(hela_val, batch_size=240, shuffle=True, prefetch_fac
 print(len(train_dataloader))
 
 criterion = torch.nn.MSELoss()
-optim = torch.optim.Adam(params=model.parameters(), lr=0.01)
+optim = torch.optim.Adam(params=model.parameters(), lr=args.lr)
 
 step = 0
 optim.zero_grad()
