@@ -5,6 +5,7 @@ from PIL import Image
 import torchvision.transforms as transforms
 
 def plotframes(X, title=None, show=True):
+    
     if not (type(X) == list):
         X = [X]
     
@@ -53,26 +54,33 @@ def plotframes_tensorboard(X, title=None):
     
     return tensor
 
-def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE, NUM_FRAMES, COLOR_CHANNELS):
-    """
-    Reconstruct the video tensor from its patches.
+def patchify(X, patch_size=32):
+    X = X.moveaxis(2,1)
     
-    Parameters:
-    - patches: the patches tensor.
-    - IMG_SIZE: the original dimension of the image (height or width, assuming they are the same).
-    - PATCH_SIZE: the size of each patch.
+    #batch_size, frame, color_channel, width, height = X.shape
+    batch_size, color_channel, frame, width, height = X.shape
     
-    Returns:
-    - video_tensor: the reconstructed video tensor.
-    """
+    patches_per_dim = width // patch_size
     
-    patches_per_dim = IMG_SIZE // PATCH_SIZE
-    batch_size = patches.shape[0]
+    # Unfold over spacial dimension
+    patches = X.unfold(3, 32, 32).unfold(4, 32, 32)
     
-    # Reshape patches to prepare for 'folding'
-    patches_reshaped = patches.reshape(batch_size, NUM_FRAMES, patches_per_dim, patches_per_dim, COLOR_CHANNELS, PATCH_SIZE, PATCH_SIZE)
+    # Combine the axis
+    patches = patches.permute(0, 2, 3, 4, 1, 5, 6)
+    patches = patches.reshape(batch_size, frame * patches_per_dim * patches_per_dim, color_channel, patch_size, patch_size)
     
-    # Fold the patches back into full frames
-    video_tensor = patches_reshaped.permute(0, 1, 4, 2, 5, 3, 6).reshape(batch_size, NUM_FRAMES, COLOR_CHANNELS, IMG_SIZE, IMG_SIZE)
+    return patches
+
+def unpatchify(X, img_size=128, patch_size=32, num_frames=2, color_channels=1):
+    batch_size, num_patches, color_channel, patch_width, patch_height = X.shape
+    patches_per_dim = img_size // patch_width
     
-    return video_tensor
+    # Change shape
+    patches = X.reshape(batch_size, num_frames, patches_per_dim, patches_per_dim, color_channel, patch_size, patch_size)
+    patches = patches.permute(0, 4, 1, 2, 3, 5, 6)
+    
+    # Concatenate the patches along their original axis
+    intermediate = torch.concat([patches[:, :, :, i, :, :, :] for i in range(patches_per_dim)], axis=4)
+    result = torch.concat([intermediate[:, :, :, i, :, :] for i in range(patches_per_dim)], axis=4)
+    
+    return result.moveaxis(2,1)

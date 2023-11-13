@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch
-from helpers import plotframes, reconstruct_from_patches
+from helpers import plotframes, patchify, unpatchify
 import random
 
 """
@@ -63,19 +63,21 @@ class MaskedVideoTransformer(nn.Module):
         # 1. Create, flatten and project the patches
         patches_per_dim = self.IMG_SIZE // self.PATCH_SIZE
         batch_size = X.shape[0]
-        print("X.shape", X.shape)
-        patches = X.unfold(3, self.PATCH_SIZE, self.PATCH_SIZE).unfold(4, self.PATCH_SIZE, self.PATCH_SIZE)
-        patches = patches.permute(0, 1, 3, 4, 2, 5, 6).reshape(batch_size, self.NUM_FRAMES * patches_per_dim * patches_per_dim, self.COLOR_CHANNELS, self.PATCH_SIZE, self.PATCH_SIZE)
+        #print("X.shape", X.shape)
+        
+        patches = patchify(X, self.PATCH_SIZE)
+        
         patches_shape_unflattened = patches.shape
         patches_flattened = torch.flatten(patches, start_dim=2)
-        patches_flattened = self.P(patches_flattened)
+        #print("flattened", patches_flattened.shape)
+        patches_projected = self.P(patches_flattened)
 
-        batch_size, num_patches, _ = patches_flattened.shape
+        batch_size, num_patches, _ = patches_projected.shape
 
         # 2. Add positional embeddings to the patches
         embedded_vectors = self.Embedding(self.embedding_indices)
         embedded_vectors = embedded_vectors.repeat(batch_size, 1, 1)
-        X = torch.cat([patches_flattened, embedded_vectors], dim=-1)
+        X = torch.cat([patches_projected, embedded_vectors], dim=-1)
 
         # 3. Randomly blind n percent of the patches
         num_patches = X.shape[1]
@@ -84,7 +86,7 @@ class MaskedVideoTransformer(nn.Module):
         X_for_encoder = X[:, patches_to_keep].clone()
         X_blinded_for_display = patches.clone()
         X_blinded_for_display[:, patches_to_keep_inverted] = 1
-        X_blinded_for_display = reconstruct_from_patches(X_blinded_for_display, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES, self.COLOR_CHANNELS)
+        X_blinded_for_display = unpatchify(X_blinded_for_display, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES, self.COLOR_CHANNELS)
         X_for_decoder = X.clone()
         X_for_decoder[:, patches_to_keep_inverted] = 0
 
@@ -113,7 +115,7 @@ class MaskedVideoTransformer(nn.Module):
         #decoder_representation = torch.sigmoid(decoder_representation)
         decoder_representation = decoder_representation.reshape(patches_shape_unflattened)
         
-        decoder_patches = reconstruct_from_patches(decoder_representation, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES, self.COLOR_CHANNELS)
+        decoder_patches = unpatchify(decoder_representation, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES, self.COLOR_CHANNELS)
 
         return decoder_patches, (X_blinded_for_display, )
 
