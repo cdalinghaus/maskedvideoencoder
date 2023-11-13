@@ -60,10 +60,10 @@ class MaskedVideoTransformer(nn.Module):
         self.transformer_decoder = torch.nn.TransformerEncoder(decoder_layer, 12)
 
     def forward(self, X):
-        
         # 1. Create, flatten and project the patches
         patches_per_dim = self.IMG_SIZE // self.PATCH_SIZE
         batch_size = X.shape[0]
+        print("X.shape", X.shape)
         patches = X.unfold(3, self.PATCH_SIZE, self.PATCH_SIZE).unfold(4, self.PATCH_SIZE, self.PATCH_SIZE)
         patches = patches.permute(0, 1, 3, 4, 2, 5, 6).reshape(batch_size, self.NUM_FRAMES * patches_per_dim * patches_per_dim, self.COLOR_CHANNELS, self.PATCH_SIZE, self.PATCH_SIZE)
         patches_shape_unflattened = patches.shape
@@ -110,7 +110,7 @@ class MaskedVideoTransformer(nn.Module):
         # 7. project and reshape to original size and shape
         decoder_representation = decoder_representation[:, :, :self.D_DIM]
         decoder_representation = self.P_invert(decoder_representation)
-        decoder_representation = torch.sigmoid(decoder_representation)
+        #decoder_representation = torch.sigmoid(decoder_representation)
         decoder_representation = decoder_representation.reshape(patches_shape_unflattened)
         
         decoder_patches = reconstruct_from_patches(decoder_representation, self.IMG_SIZE, self.PATCH_SIZE, self.NUM_FRAMES, self.COLOR_CHANNELS)

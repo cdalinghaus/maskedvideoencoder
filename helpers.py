@@ -5,15 +5,24 @@ from PIL import Image
 import torchvision.transforms as transforms
 
 def plotframes(X, title=None, show=True):
-    batch_size, frames, color_channels, x, y = X.shape
+    if not (type(X) == list):
+        X = [X]
     
-    fig, ax = plt.subplots(1, frames, figsize=(frames * 3, 3))
+    batch_size, frames, color_channels, x, y = X[0].shape
+
+    fig, ax = plt.subplots(len(X), frames, figsize=(frames * 3, len(X)*3))
+
+    for imaxis, x in enumerate(X):
+        for idx in range(frames):
+            if len(X) > 1:
+                ax[imaxis, idx].imshow(x[0, idx].permute(2,1,0).cpu().detach().numpy())
+                ax[imaxis, idx].get_xaxis().set_visible(False)
+                ax[imaxis, idx].get_yaxis().set_visible(False)
+            else:
+                ax[idx].imshow(x[0, idx].permute(2,1,0).cpu().detach().numpy())
     
-    for idx in range(frames):
-        if frames > 1:
-            ax.flat[idx].imshow(X[0, idx].permute(2,1,0).cpu().detach().numpy())
-        else:
-            ax.imshow(X[0, idx].permute(2,1,0).cpu().detach().numpy())
+    plt.subplots_adjust(top = 0.92, hspace=0.05, wspace=0.02)
+    
     if title is not None:
         fig.suptitle(title)
     if show:
@@ -34,14 +43,14 @@ def plotframes_tensorboard(X, title=None):
 
     # Load the buffer content as an image
     image = Image.open(buffer)
-    
+
     # Convert the image to a PyTorch tensor
     tensor = transforms.ToTensor()(image)
 
     # Close the buffer and figure
     buffer.close()
     plt.close()
-
+    
     return tensor
 
 def reconstruct_from_patches(patches, IMG_SIZE, PATCH_SIZE, NUM_FRAMES, COLOR_CHANNELS):

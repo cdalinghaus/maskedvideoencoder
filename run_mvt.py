@@ -18,6 +18,11 @@ parser.add_argument('--n_frames', type=int, default=1)
 
 args = parser.parse_args()
 
+writer = DualLogger(log_dir=f'./logs2/{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_{str(uuid.uuid4())}', project_name='my_project')
+
+args_str = "\n".join(f"{k}: {v}" for k, v in vars(args).items())
+writer.tensorboard_writer.add_text('Hyperparameters', args_str, 0)
+
 
 
 from torch.utils.data import DataLoader
@@ -30,18 +35,17 @@ from torch.utils.tensorboard import SummaryWriter
 
 print("run started")
 
-writer = DualLogger(log_dir=f'./logs/{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_{str(uuid.uuid4())}', project_name='my_project')
 
 
 from PIL import Image
 from helads import HelaData
 
-hela_train = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train", sequence_length=1)
-hela_val = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test", sequence_length=1)
-train_dataloader = DataLoader(hela_train, batch_size=240, shuffle=True, prefetch_factor=None, num_workers=0)
-val_dataloader = DataLoader(hela_val, batch_size=240, shuffle=True, prefetch_factor=None, num_workers=0)
+hela_train = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train", sequence_length=args.n_frames)
+hela_val = HelaData("/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test", sequence_length=args.n_frames)
+train_dataloader = DataLoader(hela_train, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
+val_dataloader = DataLoader(hela_val, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
 
-print(len(train_dataloader))
+print("Dataloader length", len(train_dataloader))
 
 criterion = torch.nn.MSELoss()
 optim = torch.optim.Adam(params=model.parameters(), lr=args.lr)
@@ -56,7 +60,7 @@ for _ in range(1000000):
         
         
         X_pred, (X_masked, ) = model(X)
-        
+
         loss = criterion(X_pred, X)
     
         loss.backward()
@@ -68,21 +72,26 @@ for _ in range(1000000):
         writer.add_scalar('Training loss', loss.item(), step)
     
         if step%20 == 18:
+            print("INPUT SHAPE TO FUNCTION", X_masked.shape)
             image_tensor = plotframes_tensorboard(X_masked, f"Train: Mask {step}")
             writer.add_image('Train: Mask', image_tensor, step)
-            
+
             image_tensor = plotframes_tensorboard(X_pred, f"Train: Prediction {step}")
             writer.add_image('Train: Prediction', image_tensor, step)
-        
-            image_tensor = plotframes_tensorboard(X, f"Train: Original {step}")
+
+            image_tensor = plotframes_tensorboard(X.moveaxis(2,1), f"Train: Original {step}")
             writer.add_image('Train: Original', image_tensor, step)
+
+            image_tensor = plotframes_tensorboard([X.moveaxis(2,1), X_pred, X_masked], f"Train: Combined {step}")
+            writer.add_image('Train: Combined', image_tensor, step)
     
             # evaluation dataset
             X_eval, _ = random.choice(hela_val)
             X_eval = X_eval[None].to(args.device)
             X_eval_pred, (X_eval_pred_masked, ) = model(X_eval)
-
-            loss = criterion(X_eval_pred, X_eval)
+            
+            print("before eval", X_eval.shape, X_eval_pred_masked.shape, X_eval_pred.shape)
+            loss = criterion(X_eval_pred, X_eval[0])
             writer.add_scalar('Validation loss', loss.item(), step)
     
             image_tensor = plotframes_tensorboard(X_eval_pred_masked, f"Val: Mask {step}")
@@ -91,8 +100,11 @@ for _ in range(1000000):
             image_tensor = plotframes_tensorboard(X_eval_pred, f"Val: Prediction {step}")
             writer.add_image('Val: Prediction', image_tensor, step)
         
-            image_tensor = plotframes_tensorboard(X_eval, f"Val: Original {step}")
+            image_tensor = plotframes_tensorboard(X_eval.moveaxis(2,1), f"Val: Original {step}")
             writer.add_image('Val: Original', image_tensor, step)
+
+            image_tensor = plotframes_tensorboard([X_eval.moveaxis(2,1), X_eval_pred, X_eval_pred_masked], f"Val: Combined {step}")
+            writer.add_image('Eval: Combined', image_tensor, step)
 
             del X_eval_pred
             del X_eval_pred_masked
