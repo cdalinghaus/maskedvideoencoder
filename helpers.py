@@ -21,6 +21,8 @@ def plotframes(X, title=None, show=True):
                 ax[imaxis, idx].get_yaxis().set_visible(False)
             else:
                 ax[idx].imshow(x[0, idx].permute(2,1,0).cpu().detach().numpy())
+                ax[idx].get_xaxis().set_visible(False)
+                ax[idx].get_yaxis().set_visible(False)
     
     plt.subplots_adjust(top = 0.92, hspace=0.05, wspace=0.02)
     
@@ -63,7 +65,7 @@ def patchify(X, patch_size=32):
     patches_per_dim = width // patch_size
     
     # Unfold over spacial dimension
-    patches = X.unfold(3, 32, 32).unfold(4, 32, 32)
+    patches = X.unfold(3, patch_size, patch_size).unfold(4, patch_size, patch_size)
     
     # Combine the axis
     patches = patches.permute(0, 2, 3, 4, 1, 5, 6)
