@@ -14,6 +14,7 @@ parser = argparse.ArgumentParser(prog='RunMVT', description='Trains the MVT mode
 parser.add_argument('--device', type=str, default="cuda")
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--n_frames', type=int, default=2)
+parser.add_argument('--patch_size', type=int, default=16)
 
 
 args = parser.parse_args()
@@ -27,7 +28,7 @@ writer.tensorboard_writer.add_text('Hyperparameters', args_str, 0)
 
 from torch.utils.data import DataLoader
 
-model = MaskedVideoTransformer(NUM_FRAMES=args.n_frames, COLOR_CHANNELS=1, D_DIM=736, PATCH_SIZE=16)
+model = MaskedVideoTransformer(NUM_FRAMES=args.n_frames, COLOR_CHANNELS=1, D_DIM=736, PATCH_SIZE=args.patch_size)
 model.to(args.device);
 
 import wandb
@@ -40,11 +41,13 @@ print("run started")
 from PIL import Image
 from helads import HelaData
 
-train_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train"
-test_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test"
 
 train_dir = "/home/constantin/Documents/celltracking/HeLa_dataset/train"
 test_dir = "/home/constantin/Documents/celltracking/HeLa_dataset/test"
+
+train_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train"
+test_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test"
+
 
 hela_train = HelaData(train_dir, sequence_length=args.n_frames)
 hela_val = HelaData(test_dir, sequence_length=args.n_frames)
@@ -70,6 +73,7 @@ for _ in range(1000000):
         #print("SHAPES", X_pred.shape, X_masked.shape)
 
         loss = criterion(X_pred, X)
+        #print(loss.item())
     
         loss.backward()
         if step%20 == 19 or True:
