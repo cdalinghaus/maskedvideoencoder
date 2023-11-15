@@ -28,10 +28,15 @@ parser.add_argument('--dec_ff', type=int, default=2048)
 
 parser.add_argument('--tensorboard', type=bool, default=True)
 parser.add_argument('--normalize', type=bool, default=True)
+parser.add_argument('--run_name', type=str, default=None)
 
 args = parser.parse_args()
 
-writer = DualLogger(log_dir=f'./logs2/{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_{str(uuid.uuid4())}', project_name='my_project')
+run_name = f'./logs2/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{str(uuid.uuid4())}'
+if args.run_name is not None:
+    run_name = args.run_name + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+
+writer = DualLogger(log_dir=run_name, project_name='my_project')
 if not args.tensorboard:
     writer = DualLogger(log_dir=f'/tmp/{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_{str(uuid.uuid4())}', project_name='my_project')
 
