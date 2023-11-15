@@ -127,8 +127,12 @@ for _ in range(1000000):
     
             # evaluation dataset
             X_eval, _ = random.choice(hela_val)
+            if args.normalize:
+       	        X_eval = normalizer(X_eval)
+
             X_eval = X_eval[None].to(args.device)
             X_eval_pred, (X_eval_pred_masked, ) = model(X_eval)
+
             
             print("before eval", X_eval.shape, X_eval_pred_masked.shape, X_eval_pred.shape)
             loss = criterion(X_eval_pred, X_eval[0])
