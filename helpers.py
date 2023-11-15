@@ -3,6 +3,25 @@ import torch
 import io
 from PIL import Image
 import torchvision.transforms as transforms
+from tqdm import tqdm
+
+def calculate_mean_std(loader):
+    mean = 0.
+    std = 0.
+    total_images_count = 0
+
+    for images, _ in tqdm(loader):
+        batch_samples = images.size(0)
+        images = images.view(batch_samples, images.size(1), -1)
+        mean += images.mean(2).sum(0)
+        std += images.std(2).sum(0)
+        total_images_count += batch_samples
+ 
+    mean /= total_images_count
+    std /= total_images_count
+
+    return mean, std
+
 
 def plotframes(X, title=None, show=True):
     

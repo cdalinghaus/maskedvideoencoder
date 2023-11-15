@@ -1,4 +1,4 @@
-from helpers import plotframes, plotframes_tensorboard
+from helpers import plotframes, plotframes_tensorboard, calculate_mean_std
 from mvt import MaskedVideoTransformer
 from gameds import GameDS
 import torch
@@ -9,6 +9,7 @@ import argparse
 from dual_logger import DualLogger
 import matplotlib.pyplot as plt
 import uuid
+from torchvision import transforms
 
 parser = argparse.ArgumentParser(prog='RunMVT', description='Trains the MVT model')
 parser.add_argument('--device', type=str, default="cuda")
@@ -21,13 +22,14 @@ args = parser.parse_args()
 writer = DualLogger(log_dir=f'./logs2/{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_{str(uuid.uuid4())}', project_name='my_project')
 
 args_str = "\n".join(f"{k}: {v}" for k, v in vars(args).items())
-writer.tensorboard_writer.add_text('Hyperparameters', args_str, 0)
+writer.tensorboard_writer.add_text('Hype[0.229, 0.224, 0.225]rparameters', args_str, 0)
 
 
 
 from torch.utils.data import DataLoader
 
 model = MaskedVideoTransformer(NUM_FRAMES=args.n_frames, COLOR_CHANNELS=1, D_DIM=736, PATCH_SIZE=16)
+
 model.to(args.device);
 
 import wandb
@@ -51,6 +53,12 @@ hela_val = HelaData(test_dir, sequence_length=args.n_frames)
 train_dataloader = DataLoader(hela_train, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
 val_dataloader = DataLoader(hela_val, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
 
+""" get mean and std """
+hela_tmp = HelaData(train_dir, sequence_length=1)
+tmp_dataloader = DataLoader(hela_tmp, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
+mean, std = calculate_mean_std(tmp_dataloader)
+normalizer = transforms.Normalize(mean=mean, std=std)
+
 print("Dataloader length", len(train_dataloader))
 
 criterion = torch.nn.MSELoss()
@@ -64,10 +72,12 @@ for _ in range(1000000):
 
         X = X.to(args.device)
         
+        X = normalizer(X)
+        
         
         X_pred, (X_masked, ) = model(X)
         
-        #print("SHAPES", X_pred.shape, X_masked.shape)
+        print("SHAPES", X_pred.shape, X_masked.shape)
 
         loss = criterion(X_pred, X)
     
@@ -112,10 +122,17 @@ for _ in range(1000000):
             image_tensor = plotframes_tensorboard([X_eval, X_eval_pred, X_eval_pred_masked], f"Val: Combined {step}")
             writer.add_image('Eval: Combined', image_tensor, step)
 
+            
+            
             del X_eval_pred
             del X_eval_pred_masked
 
+        torch.save(X_masked, 'tensor.pt')
+
+            
 
         del X_pred
-        del X_masked
+        #del X_masked
         step += 1
+    
+
