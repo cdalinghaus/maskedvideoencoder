@@ -15,7 +15,7 @@ parser.add_argument('--device', type=str, default="cuda")
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--n_frames', type=int, default=2)
 parser.add_argument('--patch_size', type=int, default=16)
-
+parser.add_argument('--ddim', type=int, default=736)
 
 args = parser.parse_args()
 
@@ -28,7 +28,7 @@ writer.tensorboard_writer.add_text('Hyperparameters', args_str, 0)
 
 from torch.utils.data import DataLoader
 
-model = MaskedVideoTransformer(NUM_FRAMES=args.n_frames, COLOR_CHANNELS=1, D_DIM=736, PATCH_SIZE=args.patch_size)
+model = MaskedVideoTransformer(NUM_FRAMES=args.n_frames, COLOR_CHANNELS=1, D_DIM=args.ddim, PATCH_SIZE=args.patch_size)
 model.to(args.device);
 
 import wandb
