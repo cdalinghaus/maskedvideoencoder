@@ -27,6 +27,7 @@ parser.add_argument('--dec_layers', type=int, default=12)
 parser.add_argument('--dec_ff', type=int, default=2048)
 
 parser.add_argument('--tensorboard', type=bool, default=True)
+parser.add_argument('--normalize', type=bool, default=True)
 
 args = parser.parse_args()
 
@@ -59,8 +60,8 @@ from helads import HelaData
 train_dir = "/home/constantin/Documents/celltracking/HeLa_dataset/train"
 test_dir = "/home/constantin/Documents/celltracking/HeLa_dataset/test"
 
-train_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train"
-test_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test"
+#train_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/train"
+#test_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test"
 
 
 hela_train = HelaData(train_dir, sequence_length=args.n_frames)
@@ -68,11 +69,12 @@ hela_val = HelaData(test_dir, sequence_length=args.n_frames)
 train_dataloader = DataLoader(hela_train, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
 val_dataloader = DataLoader(hela_val, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
 
-""" get mean and std """
-hela_tmp = HelaData(train_dir, sequence_length=1)
-tmp_dataloader = DataLoader(hela_tmp, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
-mean, std = calculate_mean_std(tmp_dataloader)
-normalizer = transforms.Normalize(mean=mean, std=std)
+if args.normalize:
+    """ get mean and std """
+    hela_tmp = HelaData(train_dir, sequence_length=1)
+    tmp_dataloader = DataLoader(hela_tmp, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
+    mean, std = calculate_mean_std(tmp_dataloader)
+    normalizer = transforms.Normalize(mean=mean, std=std)
 
 print("Dataloader length", len(train_dataloader))
 
@@ -87,7 +89,8 @@ for _ in range(1000000):
 
         X = X.to(args.device)
         
-        X = normalizer(X)
+        if args.normalize:
+            X = normalizer(X)
         
         
         X_pred, (X_masked, ) = model(X)
