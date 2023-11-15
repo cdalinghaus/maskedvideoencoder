@@ -32,9 +32,9 @@ parser.add_argument('--run_name', type=str, default=None)
 
 args = parser.parse_args()
 
-run_name = f'./logs2/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{str(uuid.uuid4())}'
+run_name = f'./logs/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{str(uuid.uuid4())}'
 if args.run_name is not None:
-    run_name = args.run_name + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    run_name = './logs/' + args.run_name + "_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
 writer = DualLogger(log_dir=run_name, project_name='my_project')
 if not args.tensorboard:
