@@ -33,11 +33,13 @@ parser.add_argument('--tensorboard', default=True, action=argparse.BooleanOption
 parser.add_argument('--normalize', default=True, action=argparse.BooleanOptionalAction)
 parser.add_argument('--run_name', type=str, default=None)
 
+parser.add_argument('--train_data_sample', type=float, default=None)
+
 args = parser.parse_args()
 
-run_name = f'./logs/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{str(uuid.uuid4())}'
+run_name = f'/scratch1/users/dalinghaus1/logs/{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{str(uuid.uuid4())}'
 if args.run_name is not None:
-    run_name = './logs/' + args.run_name + "_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+    run_name = '/scratch1/users/dalinghaus1/logs/' + args.run_name + "_" + datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
 
 writer = DualLogger(log_dir=run_name, project_name='my_project')
 if not args.tensorboard:
@@ -75,7 +77,7 @@ train_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Trac
 test_dir = "/scratch1/projects/cca/data/tracking/microscopy/Sartorius-DFKI/Tracking_datasets/HeLa_dataset/test"
 
 
-hela_train = HelaData(train_dir, sequence_length=args.n_frames)
+hela_train = HelaData(train_dir, sequence_length=args.n_frames, data_sample=args.train_data_sample)
 hela_val = HelaData(test_dir, sequence_length=args.n_frames)
 train_dataloader = DataLoader(hela_train, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
 val_dataloader = DataLoader(hela_val, batch_size=24, shuffle=True, prefetch_factor=None, num_workers=0)
@@ -92,11 +94,16 @@ print("Dataloader length", len(train_dataloader))
 criterion = torch.nn.MSELoss()
 optim = torch.optim.Adam(params=model.parameters(), lr=args.lr)
 
+X_eval_global, _ = random.choice(hela_val)
+if args.normalize:
+    X_eval_global = normalizer(X_eval_global)
+X_eval_global = X_eval_global[None].to(args.device)
+
 step = 0
 optim.zero_grad()
 for _ in range(1000000):
     print("starting epoch", _)
-    torch.save(model.state_dict(), "model.pt")
+    torch.save(model.state_dict(), f"{run_name}.pt")
     for i_step, (X, _) in enumerate(train_dataloader):
         step += 1
         X = X.to(args.device)
@@ -140,6 +147,8 @@ for _ in range(1000000):
     X_eval = X_eval[None].to(args.device)
     X_eval_pred, (X_eval_pred_masked, ) = model(X_eval)
 
+    # Eval global example
+    X_eval_global_pred, (X_eval_global_pred_masked, ) = model(X_eval_global)
             
     print("before eval", X_eval.shape, X_eval_pred_masked.shape, X_eval_pred.shape)
     loss = criterion(X_eval_pred, X_eval[0])
@@ -147,7 +156,7 @@ for _ in range(1000000):
     
     image_tensor = plotframes_tensorboard(X_eval_pred_masked, f"Val: Mask {step}")
     writer.add_image('Val: Mask', image_tensor, step)
-            
+
     image_tensor = plotframes_tensorboard(X_eval_pred, f"Val: Prediction {step}")
     writer.add_image('Val: Prediction', image_tensor, step)
         
@@ -156,6 +165,9 @@ for _ in range(1000000):
 
     image_tensor = plotframes_tensorboard([X_eval, X_eval_pred, X_eval_pred_masked], f"Val: Combined {step}")
     writer.add_image('Eval: Combined', image_tensor, step)
+
+    image_tensor = plotframes_tensorboard([X_eval_global, X_eval_global_pred, X_eval_global_pred_masked], f"GLOBAL val: Combined {step}")
+    writer.add_image('GLOBAL Eval: Combined', image_tensor, step)
 
             
             

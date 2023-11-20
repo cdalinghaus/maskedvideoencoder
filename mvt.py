@@ -37,6 +37,8 @@ class MaskedVideoTransformer(nn.Module):
         DEC_FF = 2048,
     ):
         super().__init__()
+        self.dummy_param = nn.Parameter(torch.empty(0))
+
         NUM_PATCHES = int((IMG_SIZE / PATCH_SIZE) * (IMG_SIZE / PATCH_SIZE))*NUM_FRAMES
 
         self.NUM_PATCHES = NUM_PATCHES
@@ -57,7 +59,8 @@ class MaskedVideoTransformer(nn.Module):
         self.P_invert = torch.nn.Linear(D_DIM, PATCH_SIZE*PATCH_SIZE*COLOR_CHANNELS)
 
         self.Embedding = torch.nn.Embedding(NUM_PATCHES, EMBEDDING_DIM)
-        self.Missing_Patch_Embedding = torch.nn.Embedding(1, D_DIM)
+        #self.Missing_Patch_Embedding = torch.nn.Embedding(1, D_DIM)
+        self.Missing_Patch_Embedding = torch.nn.Embedding(NUM_PATCHES, D_DIM)
 
         print(D_DIM + EMBEDDING_DIM, D_DIM, EMBEDDING_DIM)
         encoder_layer = torch.nn.TransformerEncoderLayer(D_DIM + EMBEDDING_DIM, ENC_HEADS, dim_feedforward=ENC_FF, dropout=0.1)
@@ -102,7 +105,6 @@ class MaskedVideoTransformer(nn.Module):
 
         # 5. Mix the encoder representation into the decoder input (which is blinded)
         index_pointer = 0
-        learnable_missing_patch_token = self.Missing_Patch_Embedding(self.zero_tensor)
         embedded_vectors = self.Embedding(self.embedding_indices)
         
         for idx, keep in enumerate(patches_to_keep):
@@ -111,6 +113,8 @@ class MaskedVideoTransformer(nn.Module):
                 index_pointer += 1
             else:
                 #print(learnable_missing_patch_token[0].shape, embedded_vectors[idx].shape)
+                _device = self.dummy_param.device
+                learnable_missing_patch_token = self.Missing_Patch_Embedding(torch.LongTensor([idx]).to(_device))
                 X_for_decoder[:, idx] = torch.concatenate([learnable_missing_patch_token[0], embedded_vectors[idx]])
 
         # 6. Actually use the DECODER

@@ -57,12 +57,13 @@ class FixedTransform():
 
 class HelaData:
 
-    def __init__(self, base_dir="train", sequence_length=10):
+    def __init__(self, base_dir="train", sequence_length=10, data_sample=None):
         self.sequence_length = sequence_length
         self.sequences = []
         self.sequence_start_indices = []
         self.current_start_index = 0
         self.base_dir = base_dir
+        self.data_sample = data_sample
 
         for burst in os.listdir(base_dir):
             burst_path = os.path.join(base_dir, burst, "img1")
@@ -109,6 +110,8 @@ class HelaData:
         return stacked[:, 0][None].moveaxis(0,1), torch.Tensor([0])
         
     def __len__(self):
+        if self.data_sample is not None:
+            return int((self.current_start_index - 1) * self.data_sample)
         #return 10
         return self.current_start_index - 1
 
