@@ -73,16 +73,6 @@ class HelaData:
             self.sequence_start_indices.append(self.current_start_index)
             self.current_start_index += len(frames) - self.sequence_length
         #print(self.sequence_start_indices)
-            
-    """ can be removed
-    def _transform(self, img):
-        # Define the twransformations with padding and center cropping
-        
-
-        # Apply the transformation to the image
-        transformed_image = transform(img)
-        return transformed_image
-    """
     
     def __getitem__(self, idx):
         #print(max([x for x in self.sequence_start_indices if x <= idx]))
